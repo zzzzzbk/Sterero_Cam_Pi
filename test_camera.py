@@ -18,7 +18,7 @@ cam = Picamera2(camera_num=CAMERA_NUM)
 
 # Use a still configuration (good quality, no preview overhead)
 config = cam.create_still_configuration(
-    main={"size": FAST_RESOLUTION}
+    main={"size": FULL_RESOLUTION}
 )
 cam.configure(config)
 
