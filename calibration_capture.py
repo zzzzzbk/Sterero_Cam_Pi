@@ -8,14 +8,15 @@ outdir = "calib"
 #outdir = "output"
 os.makedirs(outdir, exist_ok=True)
 
-LENS_POS = 5.38    
+LENS_POS = 4.35  
 SIZE = (1920, 1080)
 FULL_RESOLUTION=(4608, 2592)
+FAST_RESOLUTION=(2304, 1296)
 cam0 = Picamera2(camera_num=0)
 cam1 = Picamera2(camera_num=1)
 
-cfg0 = cam0.create_still_configuration(main={"size": FULL_RESOLUTION})
-cfg1 = cam1.create_still_configuration(main={"size": FULL_RESOLUTION})
+cfg0 = cam0.create_still_configuration(main={"size": FAST_RESOLUTION})
+cfg1 = cam1.create_still_configuration(main={"size": FAST_RESOLUTION})
 
 cam0.configure(cfg0)
 cam1.configure(cfg1)
