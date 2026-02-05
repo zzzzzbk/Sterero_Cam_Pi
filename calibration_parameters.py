@@ -9,13 +9,13 @@ LEFT_GLOB  = os.path.join(CALIB_DIR, "left_*.png")
 RIGHT_GLOB = os.path.join(CALIB_DIR, "right_*.png")
 
 # inner corners (NOT squares). Example: a "7x5" board means (7,5) inner corners.
-CHESSBOARD = (7, 5)
+CHESSBOARD = (7, 7)
 
 # Square size in meters (e.g. 20 mm = 0.020)
-SQUARE_SIZE = 0.020
+SQUARE_SIZE = 0.010
 
 # If True, shows detections; press any key to step, ESC to quit preview
-SHOW_DETECTIONS = False
+SHOW_DETECTIONS = True
 
 # Output file
 OUT_NPZ = "stereo_calib_result.npz"
