@@ -15,7 +15,7 @@ CHESSBOARD = (7, 5)
 SQUARE_SIZE = 0.010
 
 # If True, shows detections; press any key to step, ESC to quit preview
-SHOW_DETECTIONS = False
+SHOW_DETECTIONS = True
 
 # Output file
 OUT_NPZ = "stereo_calib_result.npz"
@@ -53,6 +53,8 @@ used = 0
 for lp, rp in zip(left_paths, right_paths):
     img_l = cv2.imread(lp, cv2.IMREAD_COLOR)
     img_r = cv2.imread(rp, cv2.IMREAD_COLOR)
+    img_l = cv2.cvtColor(img_l, cv2.COLOR_RGB2BGR)
+    img_r = cv2.cvtColor(img_r, cv2.COLOR_RGB2BGR)
     if img_l is None or img_r is None:
         print(f"Skip unreadable pair: {lp}, {rp}")
         continue
@@ -84,7 +86,14 @@ for lp, rp in zip(left_paths, right_paths):
         cv2.drawChessboardCorners(vis_l, CHESSBOARD, corners_l, True)
         cv2.drawChessboardCorners(vis_r, CHESSBOARD, corners_r, True)
         both = np.hstack([vis_l, vis_r])
-        cv2.imshow("detections (left | right)", both)
+        #print(both.shape)
+
+        window_name = "Small Window"
+        cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+
+        # 2. Resize the window to the desired dimensions (width, height)
+        cv2.resizeWindow(window_name, 1750, 500)
+        cv2.imshow(window_name, both)
         key = cv2.waitKey(0)
         if key == 27:  # ESC
             SHOW_DETECTIONS = False
@@ -127,7 +136,7 @@ print("Estimated baseline (same units as SQUARE_SIZE):", baseline)
 R1, R2, P1, P2, Q, roi1, roi2 = cv2.stereoRectify(
     K_l, D_l, K_r, D_r,
     image_size, R, T,
-    flags=cv2.CALIB_ZERO_DISPARITY, alpha=0  # alpha=0 crops to valid region
+    flags=cv2.CALIB_ZERO_DISPARITY, alpha=-1  # alpha=0 crops to valid region
 )
 
 mapLx, mapLy = cv2.initUndistortRectifyMap(K_l, D_l, R1, P1, image_size, cv2.CV_32FC1)
