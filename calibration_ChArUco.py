@@ -66,7 +66,7 @@ def detect_charuco(gray):
         return None, None, (marker_corners, marker_ids)
 
     # Refine marker detection (optional but helps)
-    # cv2.aruco.refineDetectedMarkers(gray, board, marker_corners, marker_ids, rejected)
+    cv2.aruco.refineDetectedMarkers(gray, board, marker_corners, marker_ids, rejected)
 
     # Interpolate ChArUco corners
     ret, charuco_corners, charuco_ids = cv2.aruco.interpolateCornersCharuco(
