@@ -19,7 +19,7 @@ MARKER_LENGTH = 0.007   # e.g. 7mm markers (must be < square_length)
 # ArUco dictionary
 ARUCO_DICT = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
 
-SHOW_DETECTIONS = True
+SHOW_DETECTIONS = False
 OUT_NPZ = "stereo_calib_charuco.npz"
 # -------------------------------
 
@@ -43,35 +43,36 @@ board = cv2.aruco.CharucoBoard(
     markerLength=MARKER_LENGTH,
     dictionary=ARUCO_DICT
 )
-
+board.setLegacyPattern(True)
+detector = cv2.aruco.CharucoDetector(board)
 # Detector parameters (OpenCV 4.7+ uses ArucoDetector; fallback for older)
-detector_params = cv2.aruco.DetectorParameters()
-try:
-    detector = cv2.aruco.ArucoDetector(ARUCO_DICT, detector_params)
-    use_new_api = True
-except AttributeError:
-    use_new_api = False
+# detector_params = cv2.aruco.DetectorParameters()
+# try:
+#     detector = cv2.aruco.ArucoDetector(ARUCO_DICT, detector_params)
+#     use_new_api = True
+# except AttributeError:
+#     use_new_api = False
 
 def detect_charuco(gray):
     """
     Returns (charuco_corners, charuco_ids, vis_debug)
     corners: (N,1,2), ids: (N,1)
     """
-    if use_new_api:
-        marker_corners, marker_ids, rejected = detector.detectMarkers(gray)
-    else:
-        marker_corners, marker_ids, rejected = cv2.aruco.detectMarkers(gray, ARUCO_DICT, parameters=detector_params)
 
-    if marker_ids is None or len(marker_ids) == 0:
-        return None, None, (marker_corners, marker_ids)
+    # marker_corners, marker_ids, rejected = detector.detectMarkers(gray)
+
+
+    # if marker_ids is None or len(marker_ids) == 0:
+    #     return None, None, (marker_corners, marker_ids)
 
     # Refine marker detection (optional but helps)
-    cv2.aruco.refineDetectedMarkers(gray, board, marker_corners, marker_ids, rejected)
+    # cv2.aruco.refineDetectedMarkers(gray, board, marker_corners, marker_ids, rejected)
 
     # Interpolate ChArUco corners
-    ret, charuco_corners, charuco_ids = cv2.aruco.interpolateCornersCharuco(
-        marker_corners, marker_ids, gray, board
-    )
+    # ret, charuco_corners, charuco_ids = cv2.aruco.interpolateCornersCharuco(
+    #     marker_corners, marker_ids, gray, board
+    # )
+    charuco_corners, charuco_ids, marker_corners, marker_ids = detector.detectBoard(gray)
 
     if charuco_ids is None or len(charuco_ids) < 6:
         return None, None, (marker_corners, marker_ids)
@@ -184,14 +185,50 @@ if used_pairs < 10:
 print(f"Using {used_pairs} valid stereo pairs. Image size: {image_size}")
 
 # ---- 1) Mono calibrate each camera using ChArUco ----
-# OpenCV provides a direct function:
-# calibrateCameraCharuco(charucoCorners, charucoIds, board, imageSize, ...)
-retL, K_l, D_l, rvecs_l, tvecs_l = cv2.aruco.calibrateCameraCharuco(
-    all_charuco_corners_L, all_charuco_ids_L, board, image_size, None, None
+def calibrate_charuco_standard(all_corners, all_ids, board, img_size):
+    """
+    Prepares object points and calls standard cv2.calibrateCamera
+    """
+    all_object_points = []
+    all_image_points = []
+
+    # Get the full list of 3D corners from the board
+    # (Shape: N x 1 x 3)
+    board_corners_3d = board.getChessboardCorners()
+
+    for corners, ids in zip(all_corners, all_ids):
+        if ids is not None and len(ids) > 0:
+            # 1. Filter: Select only the 3D points corresponding to detected IDs
+            # We use the IDs as indices to pick the correct rows from board_corners_3d
+            current_obj_points = board_corners_3d[ids, :]
+            
+            # 2. Add to lists
+            all_object_points.append(current_obj_points)
+            all_image_points.append(corners)
+
+    # 3. Standard Calibration
+    return cv2.calibrateCamera(
+        all_object_points, 
+        all_image_points, 
+        img_size, 
+        None, 
+        None)
+
+# Calibrate Left Camera
+retL, K_l, D_l, rvecs_l, tvecs_l = calibrate_charuco_standard(
+    all_charuco_corners_L, all_charuco_ids_L, board, image_size
 )
-retR, K_r, D_r, rvecs_r, tvecs_r = cv2.aruco.calibrateCameraCharuco(
-    all_charuco_corners_R, all_charuco_ids_R, board, image_size, None, None
+
+# Calibrate Right Camera
+retR, K_r, D_r, rvecs_r, tvecs_r = calibrate_charuco_standard(
+    all_charuco_corners_R, all_charuco_ids_R, board, image_size
 )
+# retL, K_l, D_l, rvecs_l, tvecs_l = cv2.aruco.calibrateCameraCharuco(
+#     all_charuco_corners_L, all_charuco_ids_L, board, image_size, None, None
+# )
+# retR, K_r, D_r, rvecs_r, tvecs_r = cv2.aruco.calibrateCameraCharuco(
+#     all_charuco_corners_R, all_charuco_ids_R, board, image_size, None, None
+# )
 
 print("Mono (ChArUco) RMS:")
 print("  Left :", retL)

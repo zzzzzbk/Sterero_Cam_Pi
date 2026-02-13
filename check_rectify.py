@@ -2,9 +2,9 @@ import numpy as np
 import cv2
 
 # -------- USER SETTINGS --------
-CALIB_NPZ = "stereo_calib_result.npz"
-LEFT_IMG  = "calib\\left_02.png"
-RIGHT_IMG = "calib\\right_02.png"
+CALIB_NPZ = "stereo_calib_charuco.npz"
+LEFT_IMG  = "calib\\left_09.png"
+RIGHT_IMG = "calib\\right_09.png"
 
 OUT_OVERLAY = "rectify_check_overlay.png"
 OUT_RECTL   = "rectify_check_rectL.png"

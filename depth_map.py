@@ -2,17 +2,17 @@ import numpy as np
 import cv2
 
 # -------- USER SETTINGS --------
-CALIB_NPZ = "stereo_calib_result.npz"
+CALIB_NPZ = "stereo_calib_charuco.npz"
 
 LEFT_IMG  = "output\\octopus_left.png"
 RIGHT_IMG = "output\\octopus_right.png"
-# LEFT_IMG  = "calib\\left_00.png"
-# RIGHT_IMG = "calib\\right_00.png"
+# LEFT_IMG  = "calib\\left_09.png"
+# RIGHT_IMG = "calib\\right_09.png"
 
 OUT_PREFIX = "result"
 
 # Stereo matcher parameters
-NUM_DISPARITIES = 16 * 8   # must be multiple of 16
+NUM_DISPARITIES = 16 * 28   # must be multiple of 16
 BLOCK_SIZE = 7             # odd: 5,7,9...
 
 DEPTH_MIN_M = 0.05
