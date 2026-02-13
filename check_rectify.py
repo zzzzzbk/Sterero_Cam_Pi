@@ -3,8 +3,10 @@ import cv2
 
 # -------- USER SETTINGS --------
 CALIB_NPZ = "stereo_calib_charuco.npz"
-LEFT_IMG  = "calib\\left_09.png"
-RIGHT_IMG = "calib\\right_09.png"
+# LEFT_IMG  = "calib\\left_09.png"
+# RIGHT_IMG = "calib\\right_09.png"
+LEFT_IMG  = "output/octopus_left.png"
+RIGHT_IMG = "output/octopus_right.png"
 
 OUT_OVERLAY = "rectify_check_overlay.png"
 OUT_RECTL   = "rectify_check_rectL.png"

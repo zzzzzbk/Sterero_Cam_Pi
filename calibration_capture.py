@@ -40,7 +40,7 @@ cam0.set_controls({
 # Small delay to let lens settle
 time.sleep(0.3)
 
-for i in range(20):
+for i in range(50):
     img0 = cam0.capture_array()
     img1 = cam1.capture_array()
 
