@@ -19,7 +19,7 @@ MARKER_LENGTH = 0.007   # e.g. 7mm markers (must be < square_length)
 # ArUco dictionary
 ARUCO_DICT = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
 
-SHOW_DETECTIONS = False
+SHOW_DETECTIONS = True
 OUT_NPZ = "stereo_calib_charuco.npz"
 # -------------------------------
 

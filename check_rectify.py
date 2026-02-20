@@ -33,7 +33,7 @@ def stack_with_lines(imgL, imgR, step=40):
     both = np.hstack([imgL, imgR])
 
     for y in range(0, h, step):
-        cv2.line(both, (0, y), (2*w - 1, y), (0, 255, 0), 1)
+        cv2.line(both, (0, y), (2*w - 1, y), (0, 0, 255), 2)
 
     # vertical separator
     cv2.line(both, (w, 0), (w, h - 1), (255, 0, 0), 2)

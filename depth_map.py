@@ -15,8 +15,8 @@ OUT_PREFIX = "result"
 NUM_DISPARITIES = 16 * 28   # must be multiple of 16
 BLOCK_SIZE = 7             # odd: 5,7,9...
 
-DEPTH_MIN_M = 0.05
-DEPTH_MAX_M = 3.0
+DEPTH_MIN_M = 0.01
+DEPTH_MAX_M = 0.3
 # -------------------------------
 
 
@@ -69,8 +69,21 @@ stereo = cv2.StereoSGBM_create(
 
 disp = stereo.compute(grayL, grayR).astype(np.float32) / 16.0
 
+
+#filtering disparity
+disp_clean = disp.copy()
+disp_clean[disp_clean <= 0] = np.nan
+
+# median filter on a filled version
+disp_filled = np.nan_to_num(disp_clean, nan=0.0).astype(np.float32)
+disp_med = cv2.medianBlur(disp_filled, 5)
+
+# keep only where original was valid
+valid = np.isfinite(disp_clean) & (disp_clean > 1.0)
+disp_med[~valid] = 0.0
+
 # ---- Save disparity visualization ----
-disp_vis = disp.copy()
+disp_vis = disp_med.copy()
 disp_vis[disp_vis <= 0] = np.nan
 disp_norm = cv2.normalize(
     np.nan_to_num(disp_vis, nan=0.0),
@@ -79,8 +92,10 @@ disp_norm = cv2.normalize(
 
 cv2.imwrite(f"{OUT_PREFIX}_disparity.png", disp_norm)
 
+
+
 # ---- Reproject to 3D ----
-points_3d = cv2.reprojectImageTo3D(disp, Q)
+points_3d = cv2.reprojectImageTo3D(disp_med, Q)
 depth_m = points_3d[:, :, 2]
 
 # ---- Save depth visualization ----
@@ -102,3 +117,41 @@ print(f"  {OUT_PREFIX}_rectL.png")
 print(f"  {OUT_PREFIX}_rectR.png")
 print(f"  {OUT_PREFIX}_disparity.png")
 print(f"  {OUT_PREFIX}_depth.png")
+
+
+def export_pointcloud_ply(points_3d, colors_bgr, disp,
+                          ply_path="cloud.ply",
+                          depth_min=0.05, depth_max=3.0,
+                          disp_min=1.0):
+    """
+    points_3d: (H,W,3) float32 from reprojectImageTo3D
+    colors_bgr: (H,W,3) uint8 (use rectified left image)
+    disp: (H,W) float32 disparity in pixels
+    """
+    X = points_3d[:, :, 0]
+    Y = points_3d[:, :, 1]
+    Z = points_3d[:, :, 2]
+
+    # Validity mask
+    mask = np.isfinite(Z) & (Z > depth_min) & (Z < depth_max) & np.isfinite(disp) & (disp > disp_min)
+
+    pts = points_3d[mask]  # (N,3)
+    col = colors_bgr[mask] # (N,3) BGR
+
+    # Convert BGR->RGB for PLY
+    col = col[:, ::-1]
+
+    # Write ASCII PLY
+    with open(ply_path, "w") as f:
+        f.write("ply\nformat ascii 1.0\n")
+        f.write(f"element vertex {len(pts)}\n")
+        f.write("property float x\nproperty float y\nproperty float z\n")
+        f.write("property uchar red\nproperty uchar green\nproperty uchar blue\n")
+        f.write("end_header\n")
+        for (x, y, z), (r, g, b) in zip(pts, col):
+            f.write(f"{x:.6f} {y:.6f} {z:.6f} {int(r)} {int(g)} {int(b)}\n")
+
+    print(f"Saved point cloud: {ply_path}   points={len(pts)}")
+
+export_pointcloud_ply(points_3d, rectL, disp_med, ply_path=f"{OUT_PREFIX}_cloud.ply",
+                      depth_min=DEPTH_MIN_M, depth_max=DEPTH_MAX_M, disp_min=1.0)

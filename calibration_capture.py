@@ -44,6 +44,9 @@ for i in range(50):
     img0 = cam0.capture_array()
     img1 = cam1.capture_array()
 
+    img0=cv2.cvtColor(img0, cv2.COLOR_RGB2BGR)
+    img1=cv2.cvtColor(img1, cv2.COLOR_RGB2BGR)
+
     cv2.imwrite(f"{outdir}/left_{i:02d}.png", img0)
     cv2.imwrite(f"{outdir}/right_{i:02d}.png", img1)
 

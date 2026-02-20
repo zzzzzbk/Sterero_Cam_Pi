@@ -63,6 +63,9 @@ def shot(args):
     img0 = cam0.capture_array()
     img1 = cam1.capture_array()
 
+    img0=cv2.cvtColor(img0, cv2.COLOR_RGB2BGR)
+    img1=cv2.cvtColor(img1, cv2.COLOR_RGB2BGR)
+
     cv2.imwrite(f"{DIR}/{args.filename}_left.png", img0)
     cv2.imwrite(f"{DIR}/{args.filename}_right.png", img1)
 
