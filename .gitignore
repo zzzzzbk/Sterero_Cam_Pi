@@ -1,5 +1,6 @@
 calib/
 output/
+processed/
 __pycache__/
 *.ply
 *.npz
