@@ -3,20 +3,20 @@ import cv2
 
 # -------- USER SETTINGS --------
 CALIB_NPZ = "stereo_calib_charuco.npz"
-
-LEFT_IMG  = "output/octopus_left.png"
-RIGHT_IMG = "output/octopus_right.png"
+name="reflect"
+LEFT_IMG  = f"output/{name}_left.png"
+RIGHT_IMG = f"output/{name}_right.png"
 # LEFT_IMG  = "calib\\left_09.png"
 # RIGHT_IMG = "calib\\right_09.png"
 
-OUT_PREFIX = "result"
+OUT_PREFIX = f"processed/{name}"
 
 # Stereo matcher parameters
-NUM_DISPARITIES = 16 * 28   # must be multiple of 16
-BLOCK_SIZE = 7             # odd: 5,7,9...
+
+
 
 DEPTH_MIN_M = 0.01
-DEPTH_MAX_M = 0.3
+DEPTH_MAX_M = 0.25
 # -------------------------------
 
 
@@ -53,22 +53,82 @@ grayL = cv2.cvtColor(rectL, cv2.COLOR_BGR2GRAY)
 grayR = cv2.cvtColor(rectR, cv2.COLOR_BGR2GRAY)
 
 # ---- Stereo disparity ----
+BLOCK_SIZE = 13            # odd: 5,7,9...
 stereo = cv2.StereoSGBM_create(
     minDisparity=0,
-    numDisparities=NUM_DISPARITIES,
-    blockSize=BLOCK_SIZE,
+    numDisparities= 16 * 40,   # must be multiple of 16,
+    blockSize=BLOCK_SIZE,             # odd: 5,7,9...
     P1=8 * BLOCK_SIZE * BLOCK_SIZE,
     P2=32 * BLOCK_SIZE * BLOCK_SIZE,
     disp12MaxDiff=1,
-    uniquenessRatio=10,
-    speckleWindowSize=100,
+    uniquenessRatio=20,
+    speckleWindowSize=200,
     speckleRange=2,
     preFilterCap=63,
     mode=cv2.STEREO_SGBM_MODE_SGBM_3WAY,
 )
-
+grayL=cv2.GaussianBlur(grayL,(3,3),0)
+grayR=cv2.GaussianBlur(grayR,(3,3),0)
 disp = stereo.compute(grayL, grayR).astype(np.float32) / 16.0
 
+
+# # --- Ensure grayscale is 8-bit ---
+# # grayL, grayR should be uint8; if not, convert.
+# if grayL.dtype != np.uint8:
+#     grayL_u8 = cv2.normalize(grayL, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+# else:
+#     grayL_u8 = grayL
+
+# if grayR.dtype != np.uint8:
+#     grayR_u8 = cv2.normalize(grayR, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+# else:
+#     grayR_u8 = grayR
+
+# # --- Your left matcher (stereo) already exists ---
+# # stereo = cv2.StereoSGBM_create(...)
+
+# # --- Create a right matcher with the same settings ---
+# try:
+#     stereoR = cv2.ximgproc.createRightMatcher(stereo)
+# except AttributeError:
+#     raise RuntimeError(
+#         "cv2.ximgproc not found. Install opencv-contrib-python (not opencv-python)."
+#     )
+
+# # --- Compute raw disparities (fixed-point int16) ---
+# dispL_raw = stereo.compute(grayL_u8, grayR_u8)      # int16, scaled by 16
+# dispR_raw = stereoR.compute(grayR_u8, grayL_u8)     # int16, scaled by 16
+
+# # Convert to float disparities in pixels
+# dispL = dispL_raw.astype(np.float32) / 16.0
+# dispR = dispR_raw.astype(np.float32) / 16.0
+
+# # --- WLS filter ---
+# wls = cv2.ximgproc.createDisparityWLSFilter(matcher_left=stereo)
+
+# # Typical good starting values:
+# # lambda: smoothness strength (higher = smoother, less noise, more bleeding)
+# # sigmaColor: edge sensitivity (higher = edges preserved more strongly)
+# wls.setLambda(100)        # try 5000, 8000, 12000, 20000
+# wls.setSigmaColor(2)     # try 0.8 - 2.0
+
+# # Filter expects int16 disparities (scaled by 16) + left view image as guidance
+# dispL_wls_raw = wls.filter(dispL_raw, grayL_u8, None, dispR_raw)
+
+# # Back to float disparity in pixels
+# disp_wls = dispL_wls_raw.astype(np.float32) / 16.0
+
+# # --- Clean invalids / clamp ---
+# # WLS may output negatives/zeros; mask them out
+# disp_wls_clean = disp_wls.copy()
+# disp_wls_clean[disp_wls_clean <= 0.0] = np.nan
+
+# # Optional: remove tiny disparities if you only trust nearer depths
+# min_disp_valid = 1.0
+# disp_wls_clean[disp_wls_clean < min_disp_valid] = np.nan
+
+# # If you want a displayable version (0 for invalid)
+# disp_wls_vis = np.nan_to_num(disp_wls_clean, nan=0.0).astype(np.float32)
 
 #filtering disparity
 disp_clean = disp.copy()
@@ -95,7 +155,7 @@ cv2.imwrite(f"{OUT_PREFIX}_disparity.png", disp_norm)
 
 
 # ---- Reproject to 3D ----
-points_3d = cv2.reprojectImageTo3D(disp_med, Q)
+points_3d = cv2.reprojectImageTo3D(disp_vis, Q)
 depth_m = points_3d[:, :, 2]
 
 # ---- Save depth visualization ----
@@ -153,5 +213,5 @@ def export_pointcloud_ply(points_3d, colors_bgr, disp,
 
     print(f"Saved point cloud: {ply_path}   points={len(pts)}")
 
-export_pointcloud_ply(points_3d, rectL, disp_med, ply_path=f"{OUT_PREFIX}_cloud.ply",
+export_pointcloud_ply(points_3d, rectL, disp_vis, ply_path=f"{OUT_PREFIX}_cloud.ply",
                       depth_min=DEPTH_MIN_M, depth_max=DEPTH_MAX_M, disp_min=1.0)

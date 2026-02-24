@@ -1,6 +1,7 @@
 from picamera2 import Picamera2
 from libcamera import controls
 import cv2, time, os
+import numpy as np
 
 
 
@@ -8,7 +9,7 @@ outdir = "calib"
 #outdir = "output"
 os.makedirs(outdir, exist_ok=True)
 
-LENS_POS = 4.35  
+LENS_POS = np.load("AF_lens.npz")["lens_pos"]
 SIZE = (1920, 1080)
 FULL_RESOLUTION=(4608, 2592)
 FAST_RESOLUTION=(2304, 1296)

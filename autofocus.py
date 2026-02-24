@@ -1,6 +1,7 @@
 from picamera2 import Picamera2
 from libcamera import controls
 import time
+import numpy as np
 
 SIZE = (1920, 1080)
 
@@ -20,6 +21,8 @@ meta = req.get_metadata()
 lens_pos = meta.get("LensPosition", None)
 req.release()
 print("LensPosition:", lens_pos)
+
+np.savez("AF_lens.npz", lens_pos=lens_pos)
 
 # 3) Lock it
 if lens_pos is not None:

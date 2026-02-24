@@ -11,7 +11,7 @@ def shot(args):
 
     FULL_RESOLUTION=(4608, 2592)
     FAST_RESOLUTION=(2304, 1296)
-    LENS_POS = 4.42       # try 0.5 ~ 3.0 (float)
+    LENS_POS = np.load("AF_lens.npz")["lens_pos"]       # try 0.5 ~ 3.0 (float)
     cam0 = Picamera2(camera_num=0)
     cam1 = Picamera2(camera_num=1)
 
