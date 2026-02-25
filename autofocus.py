@@ -4,29 +4,31 @@ import time
 import numpy as np
 
 SIZE = (1920, 1080)
+lp_list=[]
+for i in range(2):
+    cam = Picamera2(0)
+    cam.configure(cam.create_preview_configuration(main={"size": SIZE}))
+    cam.start()
+    time.sleep(1)
 
-cam = Picamera2(0)
-cam.configure(cam.create_preview_configuration(main={"size": SIZE}))
-cam.start()
-time.sleep(1)
+    # 1) Autofocus
+    cam.set_controls({"AfMode": controls.AfModeEnum.Auto})
+    cam.set_controls({"AfTrigger": controls.AfTriggerEnum.Start})
+    time.sleep(0.7)
 
-# 1) Autofocus
-cam.set_controls({"AfMode": controls.AfModeEnum.Auto})
-cam.set_controls({"AfTrigger": controls.AfTriggerEnum.Start})
-time.sleep(0.7)
+    # 2) Read the focused lens position
+    req = cam.capture_request()
+    meta = req.get_metadata()
+    lens_pos = meta.get("LensPosition", None)
+    req.release()
+    print("LensPosition:", lens_pos)
+    lp_list.append(lens_pos)
 
-# 2) Read the focused lens position
-req = cam.capture_request()
-meta = req.get_metadata()
-lens_pos = meta.get("LensPosition", None)
-req.release()
-print("LensPosition:", lens_pos)
+np.savez("AF_lens.npz", lens_left=lp_list[0], lens_right=lp_list[1])
 
-np.savez("AF_lens.npz", lens_pos=lens_pos)
-
-# 3) Lock it
-if lens_pos is not None:
-    cam.set_controls({
-        "AfMode": controls.AfModeEnum.Manual,
-        "LensPosition": float(lens_pos)
-    })
+# # 3) Lock it
+# if lens_pos is not None:
+#     cam.set_controls({
+#         "AfMode": controls.AfModeEnum.Manual,
+#         "LensPosition": float(lens_pos)
+#     })

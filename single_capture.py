@@ -5,13 +5,16 @@ import cv2
 import glob
 import os
 import argparse
+import numpy as np
 
 def shot(args):
     DIR = "output"
 
     FULL_RESOLUTION=(4608, 2592)
     FAST_RESOLUTION=(2304, 1296)
-    LENS_POS = np.load("AF_lens.npz")["lens_pos"]       # try 0.5 ~ 3.0 (float)
+    #LENS_POS = np.load("AF_lens.npz")["lens_pos"]       # try 0.5 ~ 3.0 (float)
+    LENS_POS_LEFT = np.load("AF_lens.npz")["lens_left"]       # try 0.5 ~ 3.0 (float)
+    LENS_POS_RIGHT = np.load("AF_lens.npz")["lens_right"]
     cam0 = Picamera2(camera_num=0)
     cam1 = Picamera2(camera_num=1)
 
@@ -26,36 +29,36 @@ def shot(args):
 
     time.sleep(1.0)  # warm up sensor
     # 1) Autofocus
-    cam0.set_controls({"AfMode": controls.AfModeEnum.Auto})
-    cam0.set_controls({"AfTrigger": controls.AfTriggerEnum.Start})
-    time.sleep(0.7)
+    # cam0.set_controls({"AfMode": controls.AfModeEnum.Auto})
+    # cam0.set_controls({"AfTrigger": controls.AfTriggerEnum.Start})
+    # time.sleep(0.7)
 
-    # 2) Read the focused lens position
-    req = cam0.capture_request()
-    meta = req.get_metadata()
-    lens_pos = meta.get("LensPosition", None)
-    req.release()
-    print("LensPosition:", lens_pos)
-    cam1.set_controls({"AfMode": controls.AfModeEnum.Auto})
-    cam1.set_controls({"AfTrigger": controls.AfTriggerEnum.Start})
-    time.sleep(0.7)
+    # # 2) Read the focused lens position
+    # req = cam0.capture_request()
+    # meta = req.get_metadata()
+    # lens_pos = meta.get("LensPosition", None)
+    # req.release()
+    # print("LensPosition:", lens_pos)
+    # cam1.set_controls({"AfMode": controls.AfModeEnum.Auto})
+    # cam1.set_controls({"AfTrigger": controls.AfTriggerEnum.Start})
+    # time.sleep(0.7)
 
-    # 2) Read the focused lens position
-    req = cam1.capture_request()
-    meta = req.get_metadata()
-    lens_pos = meta.get("LensPosition", None)
-    req.release()
-    print("LensPosition:", lens_pos)
+    # # 2) Read the focused lens position
+    # req = cam1.capture_request()
+    # meta = req.get_metadata()
+    # lens_pos = meta.get("LensPosition", None)
+    # req.release()
+    # print("LensPosition:", lens_pos)
     # Set manual focus
-    # cam1.set_controls({
-    #     "AfMode": controls.AfModeEnum.Manual,
-    #     "LensPosition": float(LENS_POS)
-    # })
+    cam1.set_controls({
+        "AfMode": controls.AfModeEnum.Manual,
+        "LensPosition": float(LENS_POS_LEFT)
+    })
 
-    # cam0.set_controls({
-    #     "AfMode": controls.AfModeEnum.Manual,
-    #     "LensPosition": float(LENS_POS)
-    # })
+    cam0.set_controls({
+        "AfMode": controls.AfModeEnum.Manual,
+        "LensPosition": float(LENS_POS_RIGHT)
+    })
 
     # Small delay to let lens settle
     time.sleep(0.3)

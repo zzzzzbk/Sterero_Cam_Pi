@@ -8,9 +8,9 @@ CALIB_NPZ = "stereo_calib_charuco.npz"
 LEFT_IMG  = "output/octopus_left.png"
 RIGHT_IMG = "output/octopus_right.png"
 
-OUT_OVERLAY = "rectify_check_overlay.png"
-OUT_RECTL   = "rectify_check_rectL.png"
-OUT_RECTR   = "rectify_check_rectR.png"
+OUT_OVERLAY = "processed/rectify_check_overlay.png"
+OUT_RECTL   = "processed/rectify_check_rectL.png"
+OUT_RECTR   = "processed/rectify_check_rectR.png"
 
 DRAW_LINES_EVERY_PX = 40   # horizontal guide line spacing
 SHOW_WINDOW = True         # set False if headless
