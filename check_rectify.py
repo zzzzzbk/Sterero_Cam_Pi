@@ -2,15 +2,15 @@ import numpy as np
 import cv2
 
 # -------- USER SETTINGS --------
-CALIB_NPZ = "stereo_calib_charuco.npz"
-# LEFT_IMG  = "calib\\left_09.png"
-# RIGHT_IMG = "calib\\right_09.png"
-LEFT_IMG  = "output/octopus_left.png"
-RIGHT_IMG = "output/octopus_right.png"
+CAMERA_ID = 1
+CALIB_NPZ = f"camera_data/camera{CAMERA_ID}/stereo_calib_charuco.npz"
+name="board"
+LEFT_IMG  = f"camera_data/camera{CAMERA_ID}/output/{name}{CAMERA_ID}_left.png"
+RIGHT_IMG = f"camera_data/camera{CAMERA_ID}/output/{name}{CAMERA_ID}_right.png"
 
-OUT_OVERLAY = "processed/rectify_check_overlay.png"
-OUT_RECTL   = "processed/rectify_check_rectL.png"
-OUT_RECTR   = "processed/rectify_check_rectR.png"
+OUT_OVERLAY = f"processed/rectify_check_{name}.png"
+OUT_RECTL   = f"processed/rectify_check_{name}{CAMERA_ID}_rectL.png"
+OUT_RECTR   = f"processed/rectify_check_{name}{CAMERA_ID}_rectR.png"
 
 DRAW_LINES_EVERY_PX = 40   # horizontal guide line spacing
 SHOW_WINDOW = True         # set False if headless
@@ -66,6 +66,7 @@ def main():
     cv2.imwrite(OUT_RECTL, rectL)
     cv2.imwrite(OUT_RECTR, rectR)
 
+    #rectR = np.roll(rectR, shift=-4, axis=0)
     # Overlay epipolar lines
     overlay = stack_with_lines(rectL, rectR, step=DRAW_LINES_EVERY_PX)
     cv2.imwrite(OUT_OVERLAY, overlay)

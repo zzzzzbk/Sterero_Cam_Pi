@@ -3,10 +3,10 @@ from libcamera import controls
 import time
 import numpy as np
 
-SIZE = (1920, 1080)
+SIZE = (2304, 1296)
 lp_list=[]
 for i in range(2):
-    cam = Picamera2(0)
+    cam = Picamera2(i)
     cam.configure(cam.create_preview_configuration(main={"size": SIZE}))
     cam.start()
     time.sleep(1)

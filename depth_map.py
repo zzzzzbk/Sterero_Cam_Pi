@@ -2,21 +2,22 @@ import numpy as np
 import cv2
 
 # -------- USER SETTINGS --------
-CALIB_NPZ = "stereo_calib_charuco.npz"
-name="reflect"
-LEFT_IMG  = f"output/{name}_left.png"
-RIGHT_IMG = f"output/{name}_right.png"
+CAMERA_ID = 1
+CALIB_NPZ = f"camera_data/camera{CAMERA_ID}/stereo_calib_charuco.npz"
+name="shared"
+LEFT_IMG  = f"camera_data/camera{CAMERA_ID}/output/{name}{CAMERA_ID}_left.png"
+RIGHT_IMG = f"camera_data/camera{CAMERA_ID}/output/{name}{CAMERA_ID}_right.png"
 # LEFT_IMG  = "calib\\left_09.png"
 # RIGHT_IMG = "calib\\right_09.png"
 
-OUT_PREFIX = f"processed/{name}"
+OUT_PREFIX = f"processed/{name}{CAMERA_ID}"
 
 # Stereo matcher parameters
 
 
 
 DEPTH_MIN_M = 0.01
-DEPTH_MAX_M = 0.25
+DEPTH_MAX_M = 0.50
 # -------------------------------
 
 
@@ -45,6 +46,8 @@ if (w, h) != image_size:
 rectL = cv2.remap(imgL, mapLx, mapLy, cv2.INTER_LINEAR)
 rectR = cv2.remap(imgR, mapRx, mapRy, cv2.INTER_LINEAR)
 
+#rectR = np.roll(rectR, shift=-4, axis=0)
+
 cv2.imwrite(f"{OUT_PREFIX}_rectL.png", rectL)
 cv2.imwrite(f"{OUT_PREFIX}_rectR.png", rectR)
 
@@ -53,97 +56,97 @@ grayL = cv2.cvtColor(rectL, cv2.COLOR_BGR2GRAY)
 grayR = cv2.cvtColor(rectR, cv2.COLOR_BGR2GRAY)
 
 # ---- Stereo disparity ----
-BLOCK_SIZE = 13            # odd: 5,7,9...
+BLOCK_SIZE =5      # odd: 5,7,9...
 stereo = cv2.StereoSGBM_create(
     minDisparity=0,
-    numDisparities= 16 * 40,   # must be multiple of 16,
-    blockSize=BLOCK_SIZE,             # odd: 5,7,9...
+    numDisparities= 16 *20,   # must be multiple of 16,
+    blockSize=BLOCK_SIZE,
     P1=8 * BLOCK_SIZE * BLOCK_SIZE,
     P2=32 * BLOCK_SIZE * BLOCK_SIZE,
-    disp12MaxDiff=1,
-    uniquenessRatio=20,
+    disp12MaxDiff=-1,
+    uniquenessRatio=1,
     speckleWindowSize=200,
-    speckleRange=2,
-    preFilterCap=63,
-    mode=cv2.STEREO_SGBM_MODE_SGBM_3WAY,
+    speckleRange=1,
+    preFilterCap = 63,
+    mode=cv2.STEREO_SGBM_MODE_SGBM,
 )
-grayL=cv2.GaussianBlur(grayL,(3,3),0)
-grayR=cv2.GaussianBlur(grayR,(3,3),0)
+# grayL=cv2.GaussianBlur(grayL,(3,3),0)
+# grayR=cv2.GaussianBlur(grayR,(3,3),0)
 disp = stereo.compute(grayL, grayR).astype(np.float32) / 16.0
 
 
-# # --- Ensure grayscale is 8-bit ---
-# # grayL, grayR should be uint8; if not, convert.
-# if grayL.dtype != np.uint8:
-#     grayL_u8 = cv2.normalize(grayL, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
-# else:
-#     grayL_u8 = grayL
+# --- Ensure grayscale is 8-bit ---
+# grayL, grayR should be uint8; if not, convert.
+if grayL.dtype != np.uint8:
+    grayL_u8 = cv2.normalize(grayL, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+else:
+    grayL_u8 = grayL
 
-# if grayR.dtype != np.uint8:
-#     grayR_u8 = cv2.normalize(grayR, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
-# else:
-#     grayR_u8 = grayR
+if grayR.dtype != np.uint8:
+    grayR_u8 = cv2.normalize(grayR, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+else:
+    grayR_u8 = grayR
 
-# # --- Your left matcher (stereo) already exists ---
-# # stereo = cv2.StereoSGBM_create(...)
+# --- Your left matcher (stereo) already exists ---
+# stereo = cv2.StereoSGBM_create(...)
 
-# # --- Create a right matcher with the same settings ---
-# try:
-#     stereoR = cv2.ximgproc.createRightMatcher(stereo)
-# except AttributeError:
-#     raise RuntimeError(
-#         "cv2.ximgproc not found. Install opencv-contrib-python (not opencv-python)."
-#     )
+# --- Create a right matcher with the same settings ---
+try:
+    stereoR = cv2.ximgproc.createRightMatcher(stereo)
+except AttributeError:
+    raise RuntimeError(
+        "cv2.ximgproc not found. Install opencv-contrib-python (not opencv-python)."
+    )
 
-# # --- Compute raw disparities (fixed-point int16) ---
-# dispL_raw = stereo.compute(grayL_u8, grayR_u8)      # int16, scaled by 16
-# dispR_raw = stereoR.compute(grayR_u8, grayL_u8)     # int16, scaled by 16
+# --- Compute raw disparities (fixed-point int16) ---
+dispL_raw = stereo.compute(grayL_u8, grayR_u8)      # int16, scaled by 16
+dispR_raw = stereoR.compute(grayR_u8, grayL_u8)     # int16, scaled by 16
 
-# # Convert to float disparities in pixels
-# dispL = dispL_raw.astype(np.float32) / 16.0
-# dispR = dispR_raw.astype(np.float32) / 16.0
+# Convert to float disparities in pixels
+dispL = dispL_raw.astype(np.float32) / 16.0
+dispR = dispR_raw.astype(np.float32) / 16.0
 
-# # --- WLS filter ---
-# wls = cv2.ximgproc.createDisparityWLSFilter(matcher_left=stereo)
+# --- WLS filter ---
+wls = cv2.ximgproc.createDisparityWLSFilter(matcher_left=stereo)
 
-# # Typical good starting values:
-# # lambda: smoothness strength (higher = smoother, less noise, more bleeding)
-# # sigmaColor: edge sensitivity (higher = edges preserved more strongly)
-# wls.setLambda(100)        # try 5000, 8000, 12000, 20000
-# wls.setSigmaColor(2)     # try 0.8 - 2.0
+# Typical good starting values:
+# lambda: smoothness strength (higher = smoother, less noise, more bleeding)
+# sigmaColor: edge sensitivity (higher = edges preserved more strongly)
+wls.setLambda(3000)        # try 5000, 8000, 12000, 20000
+wls.setSigmaColor(0.8)     # try 0.8 - 2.0
 
-# # Filter expects int16 disparities (scaled by 16) + left view image as guidance
-# dispL_wls_raw = wls.filter(dispL_raw, grayL_u8, None, dispR_raw)
+# Filter expects int16 disparities (scaled by 16) + left view image as guidance
+dispL_wls_raw = wls.filter(dispL_raw, grayL_u8, None, dispR_raw)
 
-# # Back to float disparity in pixels
-# disp_wls = dispL_wls_raw.astype(np.float32) / 16.0
+# Back to float disparity in pixels
+disp_wls = dispL_wls_raw.astype(np.float32) / 16.0
 
-# # --- Clean invalids / clamp ---
-# # WLS may output negatives/zeros; mask them out
-# disp_wls_clean = disp_wls.copy()
-# disp_wls_clean[disp_wls_clean <= 0.0] = np.nan
+# --- Clean invalids / clamp ---
+# WLS may output negatives/zeros; mask them out
+disp_wls_clean = disp_wls.copy()
+disp_wls_clean[disp_wls_clean <= 0.0] = np.nan
 
-# # Optional: remove tiny disparities if you only trust nearer depths
-# min_disp_valid = 1.0
-# disp_wls_clean[disp_wls_clean < min_disp_valid] = np.nan
+# Optional: remove tiny disparities if you only trust nearer depths
+min_disp_valid = 1.0
+disp_wls_clean[disp_wls_clean < min_disp_valid] = np.nan
 
-# # If you want a displayable version (0 for invalid)
-# disp_wls_vis = np.nan_to_num(disp_wls_clean, nan=0.0).astype(np.float32)
+# If you want a displayable version (0 for invalid)
+disp_wls_vis = np.nan_to_num(disp_wls_clean, nan=0.0).astype(np.float32)
 
-#filtering disparity
-disp_clean = disp.copy()
-disp_clean[disp_clean <= 0] = np.nan
+# #filtering disparity
+# disp_clean = disp.copy()
+# disp_clean[disp_clean <= 0] = np.nan
 
-# median filter on a filled version
-disp_filled = np.nan_to_num(disp_clean, nan=0.0).astype(np.float32)
-disp_med = cv2.medianBlur(disp_filled, 5)
+# # median filter on a filled version
+# disp_filled = np.nan_to_num(disp_clean, nan=0.0).astype(np.float32)
+# disp_med = cv2.medianBlur(disp_filled, 5)
 
-# keep only where original was valid
-valid = np.isfinite(disp_clean) & (disp_clean > 1.0)
-disp_med[~valid] = 0.0
+# # keep only where original was valid
+# valid = np.isfinite(disp_clean) & (disp_clean > 1.0)
+# disp_med[~valid] = 0.0
 
 # ---- Save disparity visualization ----
-disp_vis = disp_med.copy()
+disp_vis = disp_wls_vis.copy()
 disp_vis[disp_vis <= 0] = np.nan
 disp_norm = cv2.normalize(
     np.nan_to_num(disp_vis, nan=0.0),

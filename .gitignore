@@ -1,4 +1,6 @@
 calib/
+camera_data/
+achieved/
 output/
 processed/
 __pycache__/

@@ -4,7 +4,7 @@ import numpy as np
 import cv2
 
 # -------- USER SETTINGS ----------
-CALIB_DIR = "calib"
+CALIB_DIR = "camera_data/camera1/video/calibration"
 LEFT_GLOB  = os.path.join(CALIB_DIR, "left_*.png")
 RIGHT_GLOB = os.path.join(CALIB_DIR, "right_*.png")
 
@@ -13,14 +13,14 @@ BOARD_COLS = 8   # number of squares along X
 BOARD_ROWS = 6   # number of squares along Y
 
 # Physical sizes (meters)
-SQUARE_LENGTH = 0.010   # e.g. 10mm squares
-MARKER_LENGTH = 0.007   # e.g. 7mm markers (must be < square_length)
+SQUARE_LENGTH = 0.015   # e.g. 10mm squares
+MARKER_LENGTH = 0.011   # e.g. 7mm markers (must be < square_length)
 
 # ArUco dictionary
 ARUCO_DICT = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
 
-SHOW_DETECTIONS = True
-OUT_NPZ = "stereo_calib_charuco.npz"
+SHOW_DETECTIONS = False
+OUT_NPZ = "camera_data/camera1/stereo_calib_charuco.npz"
 # -------------------------------
 
 def sort_key(path):
@@ -74,10 +74,10 @@ def detect_charuco(gray):
     # )
     charuco_corners, charuco_ids, marker_corners, marker_ids = detector.detectBoard(gray)
 
-    if charuco_ids is None or len(charuco_ids) < 6:
-        return None, None, (marker_corners, marker_ids)
+    # if charuco_ids is None or len(charuco_ids) < 6:
+    #     return None, None, (marker_corners, marker_ids)
 
-    return charuco_corners, charuco_ids, (marker_corners, marker_ids)
+    return charuco_corners, charuco_ids, marker_corners, marker_ids
 
 # ---- Collect detections ----
 image_size = None
@@ -94,8 +94,13 @@ imgpointsL_stereo = []
 imgpointsR_stereo = []
 
 used_pairs = 0
+processed_pairs = 0
 
+last_id=-1
 for lp, rp in zip(left_paths, right_paths):
+
+    processed_pairs += 1
+
     img_l = cv2.imread(lp, cv2.IMREAD_COLOR)
     img_r = cv2.imread(rp, cv2.IMREAD_COLOR)
     if img_l is None or img_r is None:
@@ -108,31 +113,37 @@ for lp, rp in zip(left_paths, right_paths):
     if image_size is None:
         image_size = (gray_l.shape[1], gray_l.shape[0])
 
-    cL, idsL, debugL = detect_charuco(gray_l)
-    cR, idsR, debugR = detect_charuco(gray_r)
+    charuco_corners_L, charuco_id_L, marker_corners_L, marker_ids_L = detector.detectBoard(gray_l)
+    charuco_corners_R, charuco_id_R, marker_corners_R, marker_ids_R = detector.detectBoard(gray_r)
 
-    if cL is None or cR is None:
+    if charuco_corners_L is None or charuco_corners_R is None:
         print(f"ChArUco not found in pair: {os.path.basename(lp)} / {os.path.basename(rp)}")
         continue
 
-    # Save for mono calibration
-    all_charuco_corners_L.append(cL)
-    all_charuco_ids_L.append(idsL)
-    all_charuco_corners_R.append(cR)
-    all_charuco_ids_R.append(idsR)
 
     # Build stereo correspondences by common corner IDs
-    idsL_flat = idsL.flatten()
-    idsR_flat = idsR.flatten()
+    idsL_flat = charuco_id_L.flatten()
+    idsR_flat = charuco_id_R.flatten()
     common = np.intersect1d(idsL_flat, idsR_flat)
 
-    if len(common) < 8:
+    if len(common) < 15:
         print(f"Too few common ChArUco corners in pair: {os.path.basename(lp)} / {os.path.basename(rp)}")
         continue
 
+    if last_id != -1 and processed_pairs - last_id < 10:
+        print(f"skipping pair due to temporal proximity (ID {processed_pairs})")
+        continue
+        
+    
+    # Save for mono calibration
+    all_charuco_corners_L.append(charuco_corners_L)
+    all_charuco_ids_L.append(charuco_id_L)
+    all_charuco_corners_R.append(charuco_corners_R)
+    all_charuco_ids_R.append(charuco_id_R)
+    
     # Map ID -> corner for each view
-    dictL = {int(i): cL[k, 0, :] for k, i in enumerate(idsL_flat)}
-    dictR = {int(i): cR[k, 0, :] for k, i in enumerate(idsR_flat)}
+    dictL = {int(i): charuco_corners_L[k, 0, :] for k, i in enumerate(idsL_flat)}
+    dictR = {int(i): charuco_corners_R[k, 0, :] for k, i in enumerate(idsR_flat)}
 
     # Get object points for those IDs from the board model
     # board.getChessboardCorners() returns all corners in ID order (0..N-1)
@@ -154,20 +165,22 @@ for lp, rp in zip(left_paths, right_paths):
     imgpointsL_stereo.append(ptsL)
     imgpointsR_stereo.append(ptsR)
     used_pairs += 1
+    last_id = processed_pairs
+    
 
     if SHOW_DETECTIONS:
         visL = img_l.copy()
         visR = img_r.copy()
-        marker_corners_L, marker_ids_L = debugL
-        marker_corners_R, marker_ids_R = debugR
+        # marker_corners_L, marker_ids_L = debugL
+        # marker_corners_R, marker_ids_R = debugR
 
         if marker_ids_L is not None:
             cv2.aruco.drawDetectedMarkers(visL, marker_corners_L, marker_ids_L)
         if marker_ids_R is not None:
             cv2.aruco.drawDetectedMarkers(visR, marker_corners_R, marker_ids_R)
 
-        cv2.aruco.drawDetectedCornersCharuco(visL, cL, idsL)
-        cv2.aruco.drawDetectedCornersCharuco(visR, cR, idsR)
+        cv2.aruco.drawDetectedCornersCharuco(visL, charuco_corners_L, charuco_id_L)
+        cv2.aruco.drawDetectedCornersCharuco(visR, charuco_corners_R, charuco_id_R)
 
         both = np.hstack([visL, visR])
         window_name = "ChArUco detections (L | R)"
@@ -205,7 +218,7 @@ def calibrate_charuco_standard(all_corners, all_ids, board, img_size):
             # 2. Add to lists
             all_object_points.append(current_obj_points)
             all_image_points.append(corners)
-
+    print(f"Prepared {len(all_object_points)} sets of object/image points for mono calibration.")
     # 3. Standard Calibration
     return cv2.calibrateCamera(
         all_object_points, 
