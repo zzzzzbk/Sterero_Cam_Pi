@@ -6,3 +6,8 @@ processed/
 __pycache__/
 *.ply
 *.npz
+
+# Pipeline data directories – ignore generated content, track structure
+data/calibration/*/
+data/calibration/calib.npz
+data/sessions/*/
