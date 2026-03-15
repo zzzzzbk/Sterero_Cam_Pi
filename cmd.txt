@@ -1,3 +1,0 @@
-scp camera_pi_2@100.64.46.68:~/test0.264 "C:\Users\zheng\OneDrive - Virginia Tech\naughtonlab - Bokun\Projects\Ultrasound Scan Extraction\Sterero_Cam_Pi\video"
-
-
