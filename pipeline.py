@@ -61,7 +61,7 @@ CALIB_DATA_DIR   = DATA_DIR / "calibration"
 SESSIONS_DIR     = DATA_DIR / "sessions"
 DEFAULT_CALIB_NPZ = CALIB_DATA_DIR / "calib.npz"
 
-CAPTURE_SCRIPT = _HERE / "capture_sync_video"  # intentionally no .py extension
+CAPTURE_SCRIPT = _HERE / "capture_sync_video.py"
 
 
 # ---------------------------------------------------------------------------
