@@ -15,10 +15,9 @@ Data layout produced
 --------------------
   data/
     calibration/
-      <timestamp>/
         videos/     raw .mkv files from capture_sync_video
         frames/     left_NNNN.png / right_NNNN.png extracted frames
-      calib.npz     latest calibration result (overwritten each run)
+        calib.npz     latest calibration result (overwritten each run)
     sessions/
       <session>/
         videos/     raw .mkv files
@@ -100,7 +99,7 @@ def _find_videos(video_dir: Path):
 def cmd_calibrate(args):
     ts = _timestamp()
 
-    session_dir = CALIB_DATA_DIR / ts
+    session_dir = CALIB_DATA_DIR 
     videos_dir  = session_dir / "videos"
     frames_dir  = session_dir / "frames"
 
@@ -142,7 +141,7 @@ def cmd_calibrate(args):
             str(cam0),
             str(cam1),
             out_dir=str(frames_dir),
-            every_n=args.every_n,
+            every_n=1,
         )
         if n == 0:
             sys.exit("Frame extraction produced no frames. Check the video files.")
@@ -157,6 +156,7 @@ def cmd_calibrate(args):
         frames_dir=str(frames_dir),
         out_npz=out_npz,
         show_detections=False,
+        skip=args.every_n, 
     )
 
     print(f"\nCalibration complete. Result saved to: {out_npz}")
@@ -255,11 +255,11 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     cal.add_argument(
-        "--time", default="10s",
+        "--time", default="40s",
         help="Capture duration passed to rpicam-vid (e.g. 10s, 15000ms).",
     )
     cal.add_argument(
-        "--every-n", type=int, default=30, metavar="N",
+        "--every-n", type=int, default=10, metavar="N",
         help="Use every Nth frame for calibration (30 = 1 fps from a 30 fps video).",
     )
     cal.add_argument(

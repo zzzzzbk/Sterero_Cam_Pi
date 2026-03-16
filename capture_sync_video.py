@@ -5,7 +5,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-def build_cmd(camera: int, duration: str, output: Path) -> list[str]:
+def build_cmd(camera: int,role:str, duration: str, output: Path) -> list[str]:
     return [
         "rpicam-vid",
         "--camera", str(camera),
@@ -18,7 +18,7 @@ def build_cmd(camera: int, duration: str, output: Path) -> list[str]:
         "--inline",
         "--lens-position", "6",
         "--shutter", "2000",
-        "--sync", "client",
+        "--sync", role,
         "-n",
         "-t", duration,
         "-o", str(output),
@@ -45,8 +45,8 @@ def main():
     out0 = outdir / f"{args.base}_cam0_{ts}{ext}"
     out1 = outdir / f"{args.base}_cam1_{ts}{ext}"
 
-    cmd0 = build_cmd(0, args.time, out0)
-    cmd1 = build_cmd(1, args.time, out1)
+    cmd0 = build_cmd(0,"client" ,args.time, out0)
+    cmd1 = build_cmd(1, "server", args.time, out1)
 
     print("Starting camera 0:", " ".join(cmd0))
     p0 = subprocess.Popen(cmd0)

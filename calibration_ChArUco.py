@@ -59,6 +59,7 @@ def run_calibration(
     frames_dir: str,
     out_npz: str,
     show_detections: bool = False,
+    skip:int = 0,
 ) -> str:
     """
     Run stereo ChArUco calibration on frame pairs in *frames_dir* and save

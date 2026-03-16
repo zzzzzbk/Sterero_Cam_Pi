@@ -1,7 +1,8 @@
 # Stereo Camera Pi
 
-A stereo-vision pipeline for Raspberry Pi using two synchronized `rpicam-vid`
-cameras and OpenCV.  The pipeline covers the full workflow:
+A stereo-vision pipeline for Raspberry Pi 5 using two synchronized camera 3
+
+The pipeline covers the full workflow:
 
 1. **Capture** – record synchronized video from both cameras
 2. **Calibrate** – extract frames and compute the stereo camera calibration (ChArUco board)
@@ -25,9 +26,8 @@ cameras and OpenCV.  The pipeline covers the full workflow:
 │
 └── data/                    ← all generated data (contents gitignored)
     ├── calibration/
-    │   ├── <timestamp>/
-    │   │   ├── videos/      ← raw .mkv files from capture_sync_video
-    │   │   └── frames/      ← left_NNNN.png / right_NNNN.png pairs
+    │   ├── videos/      ← raw .mkv files from capture_sync_video
+    │   └── frames/      ← left_NNNN.png / right_NNNN.png pairs
     │   └── calib.npz        ← saved calibration (overwritten each run)
     └── sessions/
         └── <session_name>/
@@ -47,9 +47,16 @@ cameras and OpenCV.  The pipeline covers the full workflow:
 
 ### Prerequisites
 
-```bash
-pip install opencv-contrib-python numpy
-# rpicam-vid must be available (Raspberry Pi OS with camera stack)
+hardware: 
+
+raspberry pi 5 with dual CSI port
+
+2 raspberry pi camera 3
+
+3d printed camera mount
+
+```dependence
+pip install opencv-contrib-python numpy open3d 
 ```
 
 ### Step 1 + 2 – Calibrate
