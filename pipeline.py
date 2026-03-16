@@ -221,15 +221,31 @@ def cmd_depth(args):
             "Run 'python pipeline.py calibrate' first."
         )
 
-    from depth_map import compute_depth
-    results = compute_depth(
-        calib_npz=calib_npz,
-        left_img=str(left_img),
-        right_img=str(right_img),
-        out_dir=str(output_dir),
-        depth_min_m=args.depth_min,
-        depth_max_m=args.depth_max,
-    )
+    if args.use_foundation_stereo:
+        print("  Backend: FoundationStereo neural network")
+        from depth_map_foundation import compute_depth_foundation
+        results = compute_depth_foundation(
+            calib_npz=calib_npz,
+            left_img=str(left_img),
+            right_img=str(right_img),
+            out_dir=str(output_dir),
+            ckpt_dir=args.ckpt,
+            depth_min_m=args.depth_min,
+            depth_max_m=args.depth_max,
+            scale=args.scale,
+            valid_iters=args.valid_iters,
+        )
+    else:
+        print("  Backend: OpenCV SGBM (use --use-foundation-stereo for neural network)")
+        from depth_map import compute_depth
+        results = compute_depth(
+            calib_npz=calib_npz,
+            left_img=str(left_img),
+            right_img=str(right_img),
+            out_dir=str(output_dir),
+            depth_min_m=args.depth_min,
+            depth_max_m=args.depth_max,
+        )
 
     print(f"\nDepth estimation complete. Results saved to: {output_dir}")
     for name, path in results.items():
@@ -310,6 +326,42 @@ def main():
     dep.add_argument(
         "--no-capture", action="store_true",
         help="Skip video capture; use videos already present in the session directory.",
+    )
+
+    # ---- FoundationStereo options ----
+    _default_ckpt = str(
+        _HERE / "FoundationStereo" / "pretrained_models"
+        / "23-51-11" / "model_best_bp2.pth"
+    )
+    dep.add_argument(
+        "--use-foundation-stereo", action="store_true",
+        help=(
+            "Use the FoundationStereo neural network for depth estimation "
+            "instead of OpenCV SGBM. Requires a CUDA GPU and prior setup "
+            "(run: bash setup_foundation_stereo.sh)."
+        ),
+    )
+    dep.add_argument(
+        "--ckpt", default=_default_ckpt,
+        help=(
+            "Path to the FoundationStereo model checkpoint (.pth). "
+            "Only used with --use-foundation-stereo."
+        ),
+    )
+    dep.add_argument(
+        "--scale", type=float, default=1.0,
+        help=(
+            "Inference scale factor (≤1). Use 0.5 for faster inference at "
+            "half resolution. Only used with --use-foundation-stereo."
+        ),
+    )
+    dep.add_argument(
+        "--valid-iters", type=int, default=32,
+        help=(
+            "Number of FoundationStereo recurrent update iterations "
+            "(higher = better quality, slower). "
+            "Only used with --use-foundation-stereo."
+        ),
     )
     dep.set_defaults(func=cmd_depth)
 
