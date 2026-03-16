@@ -11,3 +11,8 @@ __pycache__/
 data/calibration/*/
 data/calibration/calib.npz
 data/sessions/*/
+
+# FoundationStereo – pretrained model weights are too large for git.
+# Run:  bash setup_foundation_stereo.sh  to populate the source.
+# Run:  git add FoundationStereo/  to commit the source after setup.
+FoundationStereo/pretrained_models/
