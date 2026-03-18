@@ -48,7 +48,7 @@ Programmatic usage
 import argparse
 import os
 import sys
-
+import pickle
 import cv2
 import numpy as np
 
@@ -284,8 +284,23 @@ def compute_depth_foundation(
     cfg["hiera"] = 0
 
     model = FoundationStereo(cfg)
-    ckpt = torch.load(ckpt_file, map_location="cpu")
-    model.load_state_dict(ckpt["model"])
+    # PyTorch 2.6+: default weights_only=True can fail on older checkpoint formats.
+    try:
+        ckpt = torch.load(ckpt_file, map_location="cpu", weights_only=True)
+    except TypeError:
+        # Older PyTorch that doesn't support weights_only kwarg
+        ckpt = torch.load(ckpt_file, map_location="cpu")
+    except pickle.UnpicklingError:
+        print(
+            "weights_only=True failed for this checkpoint format; "
+            "retrying with weights_only=False (trusted checkpoint required)."
+        )
+        ckpt = torch.load(ckpt_file, map_location="cpu", weights_only=False)
+
+    state_dict = ckpt["model"] if isinstance(ckpt, dict) and "model" in ckpt else ckpt
+    model.load_state_dict(state_dict)
+    # ckpt = torch.load(ckpt_file, map_location="cpu")
+    # model.load_state_dict(ckpt["model"])
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model.to(device)
