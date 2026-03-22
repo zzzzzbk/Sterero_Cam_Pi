@@ -31,8 +31,8 @@ ARUCO_DICT = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
 # ----------------------------------
 
 # Legacy defaults (kept for backward compatibility)
-_DEFAULT_FRAMES_DIR = "camera_data/camera1/video/calibration"
-_DEFAULT_OUT_NPZ    = "camera_data/camera1/stereo_calib_charuco.npz"
+_DEFAULT_FRAMES_DIR = "data/calibration/frames"
+_DEFAULT_OUT_NPZ    = "data/calibration/calib.npz"
 
 
 def _sort_key(path):

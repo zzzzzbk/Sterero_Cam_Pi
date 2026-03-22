@@ -172,10 +172,12 @@ def cmd_depth(args):
     videos_dir   = session_dir / "videos"
     frames_dir   = session_dir / "frames"
     output_dir   = session_dir / "output"
+    output_foundation_dir = session_dir / "output_foundation"
 
     videos_dir.mkdir(parents=True, exist_ok=True)
     frames_dir.mkdir(parents=True, exist_ok=True)
     output_dir.mkdir(parents=True, exist_ok=True)
+    output_foundation_dir.mkdir(parents=True, exist_ok=True)
 
     # ---- Step 1: Capture ----
     if not args.no_capture:
@@ -228,7 +230,7 @@ def cmd_depth(args):
             calib_npz=calib_npz,
             left_img=str(left_img),
             right_img=str(right_img),
-            out_dir=str(output_dir),
+            out_dir=str(output_foundation_dir),
             ckpt_dir=args.ckpt,
             depth_min_m=args.depth_min,
             depth_max_m=args.depth_max,

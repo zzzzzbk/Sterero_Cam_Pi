@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 # Read left and right images
-parent_dir = 'camera_data/camera2/video/stopwatch/'  # Update this to your images directory
+parent_dir = '../camera_data/camera2/video/stopwatch/'  # Update this to your images directory
 
 start_time=5.36
 fps=30

@@ -29,10 +29,10 @@ vis.add_geometry(pcd)
 ctr = vis.get_view_control()
 
 num_frames = 90
-yaw_step = 15
+yaw_step = 25
 fps = 30
 
-output_video = "output/pointcloud_rotation.mp4"
+output_video = os.path.join(os.path.dirname(file_path), "pointcloud_rotation.mp4")
 os.makedirs(os.path.dirname(output_video), exist_ok=True)
 ctr.rotate(0.0, 1280)  # Start with a view from the back
 
