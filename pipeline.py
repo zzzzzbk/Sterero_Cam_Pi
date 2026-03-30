@@ -241,6 +241,7 @@ def cmd_depth(args):
         print("  Backend: OpenCV SGBM (use --use-foundation-stereo for neural network)")
         from depth_map import compute_depth
         results = compute_depth(
+            disparity=args.disp,
             calib_npz=calib_npz,
             left_img=str(left_img),
             right_img=str(right_img),
@@ -316,6 +317,10 @@ def main():
     dep.add_argument(
         "--calib", default=None,
         help=f"Path to calibration .npz file (default: {DEFAULT_CALIB_NPZ}).",
+    )
+    dep.add_argument(
+        "--disp", type=int, default=25,
+        help="Disparity range for stereo matching.",
     )
     dep.add_argument(
         "--depth-min", type=float, default=0.01,

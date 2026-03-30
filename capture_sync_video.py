@@ -16,7 +16,7 @@ def build_cmd(camera: int,role:str, duration: str, output: Path) -> list[str]:
         "--denoise", "cdn_off",
         "--profile", "baseline",
         "--inline",
-        "--lens-position", "6",
+        "--lens-position", "4", ## change this if you want to adjust focus. focused distance = 1/(lens_position) meters. range from 0 (infinity) to 10 (10cm). default is 4 (25cm).
         "--shutter", "2000",
         "--sync", role,
         "-n",

@@ -16,3 +16,6 @@ data/sessions/*/
 # Run:  bash setup_foundation_stereo.sh  to populate the source.
 # Run:  git add FoundationStereo/  to commit the source after setup.
 FoundationStereo/pretrained_models/
+
+CV_scripts.ipynb
+depth_estimation.ipynb

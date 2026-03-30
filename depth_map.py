@@ -86,6 +86,7 @@ def export_pointcloud_ply(
 
 
 def compute_depth(
+    disparity: int,
     calib_npz: str,
     left_img: str,
     right_img: str,
@@ -155,7 +156,7 @@ def compute_depth(
     BLOCK_SIZE = 5
     stereo = cv2.StereoSGBM_create(
         minDisparity=0,
-        numDisparities=16 * 40,
+        numDisparities=16 * disparity,
         blockSize=BLOCK_SIZE,
         P1=8  * BLOCK_SIZE * BLOCK_SIZE,
         P2=32 * BLOCK_SIZE * BLOCK_SIZE,
