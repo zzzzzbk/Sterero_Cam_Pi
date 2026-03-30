@@ -4,7 +4,7 @@ import cv2
 # -------- USER SETTINGS --------
 
 CALIB_NPZ = f"data/calibration/calib.npz"
-session_name = "20260315_212357"
+session_name = "20260330_122911"
 LEFT_IMG  = f"data/sessions/{session_name}/frames/left_0000.png"
 RIGHT_IMG = f"data/sessions/{session_name}/frames/right_0000.png"
 

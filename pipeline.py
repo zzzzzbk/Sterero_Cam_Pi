@@ -155,8 +155,12 @@ def cmd_calibrate(args):
     run_calibration(
         frames_dir=str(frames_dir),
         out_npz=out_npz,
-        show_detections=False,
-        skip=args.every_n, 
+        show_detections=True,
+        skip=args.every_n,
+        BOARD_COLS = args.col,       # number of squares along X
+        BOARD_ROWS = args.row,       # number of squares along Y
+        SQUARE_LENGTH = args.sq_size,   # square size in metres (15 mm)
+        MARKER_LENGTH = args.mk_size   # marker size in metres (11 mm, must be < SQUARE_LENGTH)
     )
 
     print(f"\nCalibration complete. Result saved to: {out_npz}")
@@ -248,6 +252,7 @@ def cmd_depth(args):
             out_dir=str(output_dir),
             depth_min_m=args.depth_min,
             depth_max_m=args.depth_max,
+            USE_WLS=args.use_wls,
         )
 
     print(f"\nDepth estimation complete. Results saved to: {output_dir}")
@@ -294,6 +299,19 @@ def main():
         help="Use a pre-existing frames directory instead of extracting from video "
              "(implies --no-capture is also needed to skip capture).",
     )
+    cal.add_argument(
+        "--col", type=int, default=8, help="Number of squares along X (columns) in the ChArUco board."
+    )
+    cal.add_argument(
+        "--row", type=int, default=6, help="Number of squares along Y (rows) in the ChArUco board."
+    )
+    cal.add_argument(
+        "--sq-size", type=float, default=0.015, help="Square size in metres (default: 0.015 m = 15 mm)."
+    )
+    cal.add_argument(
+        "--mk-size", type=float, default=0.011, help="Marker size in metres (default: 0.011 m = 11 mm, must be < square size)."
+    )
+
     cal.set_defaults(func=cmd_calibrate)
 
     # ---- depth ----
@@ -323,6 +341,10 @@ def main():
         help="Disparity range for stereo matching.",
     )
     dep.add_argument(
+        "--use-wls", action="store_true",
+        help="Use the WLS filter for disparity smoothing.",
+    )
+    dep.add_argument(
         "--depth-min", type=float, default=0.01,
         help="Minimum depth (metres) shown in depth visualisation.",
     )
@@ -334,6 +356,7 @@ def main():
         "--no-capture", action="store_true",
         help="Skip video capture; use videos already present in the session directory.",
     )
+
 
     # ---- FoundationStereo options ----
     _default_ckpt = str(

@@ -93,6 +93,7 @@ def compute_depth(
     out_dir: str,
     depth_min_m: float = DEPTH_MIN_M,
     depth_max_m: float = DEPTH_MAX_M,
+    USE_WLS: bool = False,
 ) -> dict:
     """
     Compute disparity, depth map, and point cloud for one stereo image pair.
@@ -104,7 +105,7 @@ def compute_depth(
         out_dir:     Directory to write output files into.
         depth_min_m: Minimum depth (metres) shown in the depth visualisation.
         depth_max_m: Maximum depth (metres) shown in the depth visualisation.
-
+        USE_WLS:     Whether to use the WLS filter for disparity smoothing.
     Returns:
         Dictionary with keys ``rectL``, ``rectR``, ``disparity``, ``depth``,
         ``cloud`` mapping to the absolute paths of the saved files.
@@ -179,15 +180,24 @@ def compute_depth(
     dispL_raw = stereo.compute(grayL_u8, grayR_u8)
     dispR_raw = stereoR.compute(grayR_u8, grayL_u8)
 
-    wls = cv2.ximgproc.createDisparityWLSFilter(matcher_left=stereo)
-    wls.setLambda(3000)
-    wls.setSigmaColor(0.8)
-    dispL_wls_raw = wls.filter(dispL_raw, grayL_u8, None, dispR_raw)
+    if USE_WLS:
+        dispL_raw = stereo.compute(grayL_u8, grayR_u8)
+        dispR_raw = stereoR.compute(grayR_u8, grayL_u8)
 
-    disp_wls = dispL_wls_raw.astype(np.float32) / 16.0
-    disp_wls_clean = disp_wls.copy()
-    disp_wls_clean[disp_wls_clean <= 1.0] = np.nan
-    disp_vis = np.nan_to_num(disp_wls_clean, nan=0.0).astype(np.float32)
+        wls = cv2.ximgproc.createDisparityWLSFilter(matcher_left=stereo)
+        wls.setLambda(3000)
+        wls.setSigmaColor(0.8)
+        dispL_wls_raw = wls.filter(dispL_raw, grayL_u8, None, dispR_raw)
+
+        disp_wls = dispL_wls_raw.astype(np.float32) / 16.0
+        disp_wls_clean = disp_wls.copy()
+        disp_wls_clean[disp_wls_clean <= 1.0] = np.nan
+        disp_vis = np.nan_to_num(disp_wls_clean, nan=0.0).astype(np.float32)
+    else:
+        disp_raw = stereo.compute(grayL_u8, grayR_u8)
+        disp = disp_raw.astype(np.float32) / 16.0
+        disp[disp <= 1.0] = np.nan
+        disp_vis = np.nan_to_num(disp, nan=0.0).astype(np.float32)
 
     # ---- Save disparity visualisation ----
     disp_norm = cv2.normalize(

@@ -60,6 +60,10 @@ def run_calibration(
     out_npz: str,
     show_detections: bool = False,
     skip:int = 0,
+    BOARD_COLS: int = 8,       # number of squares along X
+    BOARD_ROWS: int = 6,       # number of squares along Y
+    SQUARE_LENGTH: float = 0.015,   # square size in metres (15 mm)
+    MARKER_LENGTH: float = 0.011,   # marker size in metres (11 mm, must be < SQUARE_LENGTH)
 ) -> str:
     """
     Run stereo ChArUco calibration on frame pairs in *frames_dir* and save
@@ -183,9 +187,8 @@ def run_calibration(
             cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
             cv2.resizeWindow(window_name, 1750, 500)
             cv2.imshow(window_name, both)
-            if cv2.waitKey(0) == 27:
-                show_detections = False
-                cv2.destroyAllWindows()
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
 
     if used_pairs < 10:
         raise RuntimeError(
